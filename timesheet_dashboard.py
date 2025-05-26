@@ -483,39 +483,234 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 with tab1:
     st.markdown('<div class="section-header">Executive Dashboard</div>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
+    # Initialize session state for drill-down
+    if 'drill_down_active' not in st.session_state:
+        st.session_state.drill_down_active = False
+    if 'drill_down_type' not in st.session_state:
+        st.session_state.drill_down_type = None
+    if 'drill_down_value' not in st.session_state:
+        st.session_state.drill_down_value = None
     
-    with col1:
-        # Hours by category
-        category_hours = filtered_df.groupby('Categorie')['Aantal'].sum().reset_index()
-        fig1 = px.pie(category_hours, values='Aantal', names='Categorie', 
-                     title="Hours Distribution by Category")
-        st.plotly_chart(fig1, use_container_width=True)
-        
-        # Hours by month
-        monthly_hours = filtered_df.groupby('Month_Name')['Aantal'].sum().reset_index()
-        month_order = ['January', 'February', 'March', 'April', 'May', 'June',
-                      'July', 'August', 'September', 'October', 'November', 'December']
-        monthly_hours['Month_Name'] = pd.Categorical(monthly_hours['Month_Name'], 
-                                                   categories=month_order, ordered=True)
-        monthly_hours = monthly_hours.sort_values('Month_Name')
-        
-        fig2 = px.bar(monthly_hours, x='Month_Name', y='Aantal', 
-                     title="Hours by Month")
-        st.plotly_chart(fig2, use_container_width=True)
+    # Back button for drill-down views
+    if st.session_state.drill_down_active:
+        col_back, col_title = st.columns([1, 4])
+        with col_back:
+            if st.button("← Back to Overview", key="back_overview"):
+                st.session_state.drill_down_active = False
+                st.session_state.drill_down_type = None
+                st.session_state.drill_down_value = None
+                st.rerun()
+        with col_title:
+            st.markdown(f"#### 🔍 Detailed Analysis: {st.session_state.drill_down_value}")
     
-    with col2:
-        # Revenue by category
-        category_revenue = filtered_df.groupby('Categorie')['Totaal'].sum().reset_index()
-        fig3 = px.pie(category_revenue, values='Totaal', names='Categorie', 
-                     title="Revenue Distribution by Category")
-        st.plotly_chart(fig3, use_container_width=True)
+    # Show drill-down view or main overview
+    if st.session_state.drill_down_active:
+        # DRILL-DOWN DETAILED VIEW
+        drill_data = filtered_df.copy()
         
-        # Daily hours trend
-        daily_hours = filtered_df.groupby('Datum')['Aantal'].sum().reset_index()
-        fig4 = px.line(daily_hours, x='Datum', y='Aantal', 
-                      title="Daily Hours Trend")
-        st.plotly_chart(fig4, use_container_width=True)
+        if st.session_state.drill_down_type == "category":
+            drill_data = drill_data[drill_data['Categorie'] == st.session_state.drill_down_value]
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Show employees in this category
+                emp_breakdown = drill_data.groupby('Medewerker')['Aantal'].sum().reset_index()
+                emp_breakdown = emp_breakdown.sort_values('Aantal', ascending=False).head(15)
+                
+                fig_emp = px.bar(emp_breakdown, x='Medewerker', y='Aantal',
+                               title=f"Top Employees in {st.session_state.drill_down_value}",
+                               color_discrete_sequence=['#3b82f6'])
+                fig_emp.update_layout(xaxis_tickangle=45, height=400)
+                st.plotly_chart(fig_emp, use_container_width=True)
+                
+                # Show projects in this category
+                proj_breakdown = drill_data.groupby('Project')['Aantal'].sum().reset_index()
+                proj_breakdown = proj_breakdown.sort_values('Aantal', ascending=False).head(10)
+                
+                fig_proj = px.bar(proj_breakdown, x='Project', y='Aantal',
+                                title=f"Top Projects in {st.session_state.drill_down_value}",
+                                color_discrete_sequence=['#10b981'])
+                fig_proj.update_layout(xaxis_tickangle=45, height=400)
+                st.plotly_chart(fig_proj, use_container_width=True)
+            
+            with col2:
+                # Show time trend for this category
+                daily_trend = drill_data.groupby('Datum')['Aantal'].sum().reset_index()
+                fig_trend = px.line(daily_trend, x='Datum', y='Aantal',
+                                  title=f"Daily Hours Trend - {st.session_state.drill_down_value}",
+                                  color_discrete_sequence=['#f59e0b'])
+                fig_trend.update_layout(height=400)
+                st.plotly_chart(fig_trend, use_container_width=True)
+                
+                # Show hour types within this category
+                hour_types = drill_data.groupby('Urensoort')['Aantal'].sum().reset_index()
+                hour_types = hour_types.sort_values('Aantal', ascending=False)
+                
+                fig_types = px.pie(hour_types, values='Aantal', names='Urensoort',
+                                 title=f"Hour Types in {st.session_state.drill_down_value}")
+                fig_types.update_layout(height=400)
+                st.plotly_chart(fig_types, use_container_width=True)
+            
+            # Detailed data table
+            st.markdown("#### 📋 Detailed Records")
+            detail_columns = ['Medewerker', 'Datum', 'Project', 'Relatie', 'Urensoort', 'Aantal', 'Uurtarief', 'Totaal']
+            detail_df = drill_data[detail_columns].copy()
+            detail_df['Datum'] = detail_df['Datum'].dt.strftime('%d-%m-%Y')
+            st.dataframe(detail_df.head(100), use_container_width=True)
+            
+        elif st.session_state.drill_down_type == "month":
+            # Filter data for selected month
+            month_name = st.session_state.drill_down_value
+            drill_data = drill_data[drill_data['Month_Name'] == month_name]
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Category breakdown for the month
+                cat_breakdown = drill_data.groupby('Categorie')['Aantal'].sum().reset_index()
+                fig_cat = px.pie(cat_breakdown, values='Aantal', names='Categorie',
+                               title=f"Categories in {month_name}")
+                st.plotly_chart(fig_cat, use_container_width=True)
+                
+                # Top employees for the month
+                emp_month = drill_data.groupby('Medewerker')['Aantal'].sum().reset_index()
+                emp_month = emp_month.sort_values('Aantal', ascending=False).head(10)
+                fig_emp_month = px.bar(emp_month, x='Medewerker', y='Aantal',
+                                     title=f"Top Employees in {month_name}",
+                                     color_discrete_sequence=['#8b5cf6'])
+                fig_emp_month.update_layout(xaxis_tickangle=45)
+                st.plotly_chart(fig_emp_month, use_container_width=True)
+            
+            with col2:
+                # Daily breakdown for the month
+                daily_month = drill_data.groupby('Datum')['Aantal'].sum().reset_index()
+                fig_daily = px.bar(daily_month, x='Datum', y='Aantal',
+                                 title=f"Daily Hours in {month_name}",
+                                 color_discrete_sequence=['#ef4444'])
+                st.plotly_chart(fig_daily, use_container_width=True)
+                
+                # Project breakdown for the month
+                proj_month = drill_data.groupby('Project')['Aantal'].sum().reset_index()
+                proj_month = proj_month.sort_values('Aantal', ascending=False).head(8)
+                fig_proj_month = px.pie(proj_month, values='Aantal', names='Project',
+                                      title=f"Projects in {month_name}")
+                st.plotly_chart(fig_proj_month, use_container_width=True)
+    
+    else:
+        # MAIN OVERVIEW WITH INTERACTIVE CHARTS
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Interactive hours by category
+            category_hours = filtered_df.groupby('Categorie')['Aantal'].sum().reset_index()
+            fig1 = px.pie(category_hours, values='Aantal', names='Categorie', 
+                         title="Hours Distribution by Category (Click to drill down)")
+            fig1.update_traces(
+                hovertemplate='<b>%{label}</b><br>Hours: %{value}<br>Percentage: %{percent}<extra></extra>',
+                textinfo='label+percent'
+            )
+            
+            # Display the chart and capture click events
+            selected_category = st.plotly_chart(fig1, use_container_width=True, key="category_chart")
+            
+            # Check for category selection
+            category_options = ["Click on chart to drill down"] + category_hours['Categorie'].tolist()
+            selected_cat = st.selectbox("Or select category to analyze:", category_options, key="cat_select")
+            
+            if selected_cat != "Click on chart to drill down":
+                if st.button(f"Analyze {selected_cat} →", key="drill_cat"):
+                    st.session_state.drill_down_active = True
+                    st.session_state.drill_down_type = "category"
+                    st.session_state.drill_down_value = selected_cat
+                    st.rerun()
+            
+            # Interactive hours by month
+            monthly_hours = filtered_df.groupby('Month_Name')['Aantal'].sum().reset_index()
+            month_order = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December']
+            monthly_hours['Month_Name'] = pd.Categorical(monthly_hours['Month_Name'], 
+                                                       categories=month_order, ordered=True)
+            monthly_hours = monthly_hours.sort_values('Month_Name')
+            
+            fig2 = px.bar(monthly_hours, x='Month_Name', y='Aantal', 
+                         title="Hours by Month (Click to drill down)",
+                         color_discrete_sequence=['#3b82f6'])
+            fig2.update_traces(
+                hovertemplate='<b>%{x}</b><br>Hours: %{y}<extra></extra>'
+            )
+            
+            st.plotly_chart(fig2, use_container_width=True, key="month_chart")
+            
+            # Month selection for drill-down
+            month_options = ["Click on chart to drill down"] + monthly_hours['Month_Name'].astype(str).tolist()
+            selected_month = st.selectbox("Or select month to analyze:", month_options, key="month_select")
+            
+            if selected_month != "Click on chart to drill down":
+                if st.button(f"Analyze {selected_month} →", key="drill_month"):
+                    st.session_state.drill_down_active = True
+                    st.session_state.drill_down_type = "month"
+                    st.session_state.drill_down_value = selected_month
+                    st.rerun()
+        
+        with col2:
+            # Interactive revenue by category
+            category_revenue = filtered_df.groupby('Categorie')['Totaal'].sum().reset_index()
+            fig3 = px.pie(category_revenue, values='Totaal', names='Categorie', 
+                         title="Revenue Distribution by Category")
+            fig3.update_traces(
+                hovertemplate='<b>%{label}</b><br>Revenue: €%{value:,.0f}<br>Percentage: %{percent}<extra></extra>',
+                textinfo='label+percent'
+            )
+            st.plotly_chart(fig3, use_container_width=True)
+            
+            # Interactive daily hours trend
+            daily_hours = filtered_df.groupby('Datum')['Aantal'].sum().reset_index()
+            fig4 = px.line(daily_hours, x='Datum', y='Aantal', 
+                          title="Daily Hours Trend")
+            fig4.update_traces(
+                hovertemplate='<b>%{x}</b><br>Hours: %{y}<extra></extra>',
+                line=dict(color='#10b981', width=3)
+            )
+            st.plotly_chart(fig4, use_container_width=True)
+        
+        # Interactive summary cards
+        st.markdown("#### 🔍 Quick Insights")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            # Top category
+            top_category = category_hours.loc[category_hours['Aantal'].idxmax()]
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4 style="margin: 0; color: #3b82f6;">🏆 Top Category</h4>
+                <h3 style="margin: 0.5rem 0 0 0; color: #1f2937;">{top_category['Categorie']}</h3>
+                <p style="margin: 0; color: #6b7280;">{top_category['Aantal']:,.0f} hours</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            # Peak month
+            peak_month = monthly_hours.loc[monthly_hours['Aantal'].idxmax()]
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4 style="margin: 0; color: #10b981;">📈 Peak Month</h4>
+                <h3 style="margin: 0.5rem 0 0 0; color: #1f2937;">{peak_month['Month_Name']}</h3>
+                <p style="margin: 0; color: #6b7280;">{peak_month['Aantal']:,.0f} hours</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            # Average daily hours
+            avg_daily = daily_hours['Aantal'].mean()
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4 style="margin: 0; color: #f59e0b;">📊 Daily Average</h4>
+                <h3 style="margin: 0.5rem 0 0 0; color: #1f2937;">{avg_daily:.0f} hours</h3>
+                <p style="margin: 0; color: #6b7280;">per working day</p>
+            </div>
+            """, unsafe_allow_html=True)
 
 with tab2:
     st.markdown('<div class="section-header">Workforce Analytics</div>', unsafe_allow_html=True)
