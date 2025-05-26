@@ -8,7 +8,7 @@ from io import StringIO
 
 # Set page config
 st.set_page_config(
-    page_title="Professional Timesheet Dashboard",
+    page_title="ACMI - Timesheet Analytics",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -17,29 +17,195 @@ st.set_page_config(
 # Custom CSS for professional styling
 st.markdown("""
 <style>
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Custom color scheme - Professional navy and blue */
+    :root {
+        --primary-color: #1f2937;
+        --secondary-color: #3b82f6;
+        --accent-color: #10b981;
+        --background-color: #f8fafc;
+        --card-background: #ffffff;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --border-color: #e5e7eb;
+    }
+    
+    /* Main title styling */
+    .main-title {
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        text-align: center;
+        margin: 2rem 0;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-bottom: 3px solid var(--secondary-color);
+        padding-bottom: 1rem;
+    }
+    
+    /* Subtitle */
+    .subtitle {
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        text-align: center;
+        margin-bottom: 2rem;
+        font-weight: 400;
+    }
+    
+    /* Metric cards styling */
     .metric-card {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border: 1px solid #e0e0e0;
+        background: linear-gradient(135deg, var(--card-background) 0%, #f1f5f9 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+    
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Alert boxes */
     .alert-box {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 1.5rem 0;
+        border-left: 4px solid;
+        font-weight: 500;
     }
+    
     .alert-warning {
-        background-color: #fff3cd;
-        border: 1px solid #ffeaa7;
-        color: #856404;
+        background-color: #fef3c7;
+        border-left-color: #f59e0b;
+        color: #92400e;
     }
+    
     .alert-success {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
+        background-color: #d1fae5;
+        border-left-color: var(--accent-color);
+        color: #065f46;
     }
-    .quick-button {
-        margin: 0.25rem;
+    
+    .alert-info {
+        background-color: #dbeafe;
+        border-left-color: var(--secondary-color);
+        color: #1e40af;
+    }
+    
+    /* Professional buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: var(--background-color);
+    }
+    
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: var(--background-color);
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: var(--card-background);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, #2563eb 100%);
+        color: white;
+        border-color: var(--secondary-color);
+    }
+    
+    /* Header section */
+    .header-section {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #374151 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    /* Professional data tables */
+    .dataframe {
+        border: none !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+    }
+    
+    /* Status indicators */
+    .status-indicator {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .status-success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-warning {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    
+    .status-error {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+    
+    /* Section headers */
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        border-left: 4px solid var(--secondary-color);
+        padding-left: 1rem;
+        margin: 2rem 0 1rem 0;
+    }
+    
+    /* Company branding */
+    .company-logo {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--secondary-color) 0%, #6366f1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center;
+        margin-bottom: 0.5rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -83,23 +249,39 @@ def load_data(uploaded_file=None):
     return df
 
 # Data upload section
-st.title("📊 Professional Timesheet Dashboard")
+st.markdown("""
+<div class="header-section">
+    <div class="company-logo">ACMI</div>
+    <div class="subtitle">Timesheet Analytics Platform</div>
+    <p style="margin: 0; opacity: 0.9;">Advanced workforce analytics and compliance monitoring</p>
+</div>
+""", unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader(
-    "Upload your timesheet CSV file", 
+    "📁 Upload Timesheet Data", 
     type=['csv'],
-    help="Upload your Detailweergaveuren CSV file to get started"
+    help="Upload your Detailweergaveuren CSV file to begin analysis"
 )
 
 # Load data
 df = load_data(uploaded_file)
 
 if df is None:
-    st.error("❌ Please upload your timesheet CSV file to continue.")
-    st.info("💡 Expected file format: CSV with columns including Medewerker, Datum, Aantal, Categorie, etc.")
+    st.markdown("""
+    <div class="alert-box alert-info">
+        <strong>🚀 Getting Started</strong><br>
+        Please upload your timesheet CSV file to access the analytics platform.<br>
+        <small>Expected format: CSV with columns including Medewerker, Datum, Aantal, Categorie, etc.</small>
+    </div>
+    """, unsafe_allow_html=True)
     st.stop()
 
-st.success(f"✅ Data loaded successfully! {len(df)} records found.")
+st.markdown("""
+<div class="alert-box alert-success">
+    <strong>✅ Data Successfully Loaded</strong><br>
+    """ + f"{len(df):,} records processed and ready for analysis" + """
+</div>
+""", unsafe_allow_html=True)
 
 # Helper functions for date calculations
 def get_last_week_dates():
@@ -133,7 +315,12 @@ def get_last_year_dates():
     return datetime(last_year, 1, 1).date(), datetime(last_year, 12, 31).date()
 
 # Sidebar filters
-st.sidebar.header("🔍 Filters")
+st.sidebar.markdown("""
+<div style="text-align: center; padding: 1rem; margin-bottom: 1rem; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 8px; color: white;">
+    <h3 style="margin: 0; color: white;">🔍 Analytics Filters</h3>
+    <p style="margin: 0.5rem 0 0 0; opacity: 0.8; font-size: 0.9rem;">Customize your data view</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Date range filter
 date_min = df['Datum'].min().date()
@@ -212,32 +399,66 @@ filtered_df = apply_filters(df)
 
 # Display filtered data info
 st.sidebar.markdown("---")
-st.sidebar.metric("Filtered Records", len(filtered_df))
-st.sidebar.metric("Total Hours", f"{filtered_df['Aantal'].sum():.1f}")
-st.sidebar.metric("Total Revenue", f"€{filtered_df['Totaal'].sum():,.2f}")
+st.sidebar.markdown("### 📊 Current Selection")
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    st.metric("Records", f"{len(filtered_df):,}")
+    st.metric("Hours", f"{filtered_df['Aantal'].sum():.0f}")
+with col2:
+    st.metric("Revenue", f"€{filtered_df['Totaal'].sum()/1000:.0f}K")
+    st.metric("Employees", len(filtered_df['Medewerker'].unique()))
 
 # Main dashboard content
+st.markdown("### 📈 Key Performance Indicators")
+
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric("Total Hours", f"{filtered_df['Aantal'].sum():.1f}")
+    st.markdown("""
+    <div class="metric-card">
+        <h3 style="margin: 0; color: #3b82f6;">⏰ Total Hours</h3>
+        <h2 style="margin: 0.5rem 0 0 0; color: #1f2937;">""" + f"{filtered_df['Aantal'].sum():,.0f}" + """</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
 with col2:
-    st.metric("Total Revenue", f"€{filtered_df['Totaal'].sum():,.2f}")
+    st.markdown("""
+    <div class="metric-card">
+        <h3 style="margin: 0; color: #10b981;">💰 Total Revenue</h3>
+        <h2 style="margin: 0.5rem 0 0 0; color: #1f2937;">€""" + f"{filtered_df['Totaal'].sum():,.0f}" + """</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
 with col3:
-    st.metric("Avg Rate/Hour", f"€{filtered_df['Uurtarief'].mean():.2f}")
+    st.markdown("""
+    <div class="metric-card">
+        <h3 style="margin: 0; color: #f59e0b;">📊 Avg Rate</h3>
+        <h2 style="margin: 0.5rem 0 0 0; color: #1f2937;">€""" + f"{filtered_df['Uurtarief'].mean():.0f}" + """/hr</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
 with col4:
-    st.metric("Active Employees", len(filtered_df['Medewerker'].unique()))
+    st.markdown("""
+    <div class="metric-card">
+        <h3 style="margin: 0; color: #8b5cf6;">👥 Active Staff</h3>
+        <h2 style="margin: 0.5rem 0 0 0; color: #1f2937;">""" + f"{len(filtered_df['Medewerker'].unique())}" + """</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
 # Create tabs for different views
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📈 Overview", "👥 Employees", "📋 Projects", "💼 Clients", "🔍 Data Explorer", "📊 Raw Data"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "📈 Executive Dashboard", 
+    "👥 Workforce Analytics", 
+    "📋 Project Performance", 
+    "💼 Client Portfolio", 
+    "🔍 Advanced Analytics", 
+    "📊 Data Export"
+])
 
 with tab1:
-    st.header("Overview Dashboard")
+    st.markdown('<div class="section-header">Executive Dashboard</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
@@ -274,24 +495,24 @@ with tab1:
         st.plotly_chart(fig4, use_container_width=True)
 
 with tab2:
-    st.header("👥 Employee Analysis")
+    st.markdown('<div class="section-header">Workforce Analytics</div>', unsafe_allow_html=True)
     
     # Quick access buttons
-    st.subheader("🚀 Quick Time Period Analysis")
+    st.markdown("#### 🚀 Quick Period Analysis")
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        if st.button("📅 Last Week", key="last_week"):
+        if st.button("📅 Last Week", key="last_week", use_container_width=True):
             st.session_state.time_period = "last_week"
     with col2:
-        if st.button("📅 Last Month", key="last_month"):
+        if st.button("📅 Last Month", key="last_month", use_container_width=True):
             st.session_state.time_period = "last_month"
     with col3:
-        if st.button("📅 Last Quarter", key="last_quarter"):
+        if st.button("📅 Last Quarter", key="last_quarter", use_container_width=True):
             st.session_state.time_period = "last_quarter"
     with col4:
-        if st.button("📅 Last Year", key="last_year"):
+        if st.button("📅 Last Year", key="last_year", use_container_width=True):
             st.session_state.time_period = "last_year"
     
     # Handle time period selection
@@ -303,23 +524,23 @@ with tab2:
     
     if st.session_state.time_period == "last_week":
         start_date, end_date = get_last_week_dates()
-        period_data = df[(df['Datum'].dt.date >= start_date) & (df['Datum'].dt.date <= end_date)]
+        period_data = filtered_df[(filtered_df['Datum'].dt.date >= start_date) & (filtered_df['Datum'].dt.date <= end_date)]
         period_name = f"Last Week ({start_date} to {end_date})"
     elif st.session_state.time_period == "last_month":
         start_date, end_date = get_last_month_dates()
-        period_data = df[(df['Datum'].dt.date >= start_date) & (df['Datum'].dt.date <= end_date)]
+        period_data = filtered_df[(filtered_df['Datum'].dt.date >= start_date) & (filtered_df['Datum'].dt.date <= end_date)]
         period_name = f"Last Month ({start_date.strftime('%B %Y')})"
     elif st.session_state.time_period == "last_quarter":
         start_date, end_date = get_last_quarter_dates()
-        period_data = df[(df['Datum'].dt.date >= start_date) & (df['Datum'].dt.date <= end_date)]
+        period_data = filtered_df[(filtered_df['Datum'].dt.date >= start_date) & (filtered_df['Datum'].dt.date <= end_date)]
         period_name = f"Last Quarter ({start_date} to {end_date})"
     elif st.session_state.time_period == "last_year":
         start_date, end_date = get_last_year_dates()
-        period_data = df[(df['Datum'].dt.date >= start_date) & (df['Datum'].dt.date <= end_date)]
+        period_data = filtered_df[(filtered_df['Datum'].dt.date >= start_date) & (filtered_df['Datum'].dt.date <= end_date)]
         period_name = f"Last Year ({start_date.year})"
     
     if period_data is not None:
-        st.markdown(f"### 📊 Analysis for {period_name}")
+        st.markdown(f"#### 📊 Analysis for {period_name}")
         
         # Employee activity in selected period
         period_summary = period_data.groupby('Medewerker').agg({
@@ -340,20 +561,26 @@ with tab2:
                 x=period_summary.index[:15], 
                 y=period_summary['Total Hours'][:15],
                 title=f"Top 15 Employees by Hours - {period_name}",
-                labels={'x': 'Employee', 'y': 'Hours'}
+                labels={'x': 'Employee', 'y': 'Hours'},
+                color_discrete_sequence=['#3b82f6']
             )
-            fig_period.update_layout(xaxis_tickangle=45)
+            fig_period.update_layout(
+                xaxis_tickangle=45,
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font_family="Arial, sans-serif"
+            )
             st.plotly_chart(fig_period, use_container_width=True)
     
     st.markdown("---")
     
     # Incomplete timesheet detection for last week
-    st.subheader("⚠️ Timesheet Compliance Check - Last Week")
+    st.markdown("#### ⚠️ Compliance Monitoring - Last Week")
     
     last_week_start, last_week_end = get_last_week_dates()
-    last_week_data = df[
-        (df['Datum'].dt.date >= last_week_start) & 
-        (df['Datum'].dt.date <= last_week_end)
+    last_week_data = filtered_df[
+        (filtered_df['Datum'].dt.date >= last_week_start) & 
+        (filtered_df['Datum'].dt.date <= last_week_end)
     ]
     
     # Calculate working days (Monday-Friday) in last week
@@ -400,7 +627,7 @@ with tab2:
     st.markdown("---")
     
     # Overall employee summary
-    st.subheader("📊 Overall Employee Summary")
+    st.markdown("#### 📊 Workforce Performance Summary")
     
     employee_summary = filtered_df.groupby('Medewerker').agg({
         'Aantal': 'sum',
@@ -430,7 +657,7 @@ with tab2:
         st.plotly_chart(fig6, use_container_width=True)
 
 with tab3:
-    st.header("Project Analysis")
+    st.markdown('<div class="section-header">Project Performance Analytics</div>', unsafe_allow_html=True)
     
     # Project summary table
     project_summary = filtered_df.groupby('Project').agg({
@@ -462,7 +689,7 @@ with tab3:
         st.plotly_chart(fig8, use_container_width=True)
 
 with tab4:
-    st.header("Client Analysis")
+    st.markdown('<div class="section-header">Client Portfolio Analytics</div>', unsafe_allow_html=True)
     
     # Client summary table
     client_summary = filtered_df.groupby('Relatie').agg({
@@ -494,10 +721,10 @@ with tab4:
         st.plotly_chart(fig10, use_container_width=True)
 
 with tab5:
-    st.header("🔍 Advanced Data Explorer")
+    st.markdown('<div class="section-header">Advanced Data Analytics</div>', unsafe_allow_html=True)
     
     # Advanced filtering options
-    st.subheader("Advanced Filters")
+    st.markdown("#### Advanced Filtering Options")
     
     col1, col2, col3 = st.columns(3)
     
@@ -575,7 +802,7 @@ with tab5:
         )
 
 with tab6:
-    st.header("Raw Data Explorer")
+    st.markdown('<div class="section-header">Data Export & Raw Analysis</div>', unsafe_allow_html=True)
     
     # Search and filter options
     col1, col2 = st.columns([3, 1])
@@ -618,8 +845,9 @@ with tab6:
 # Footer
 st.markdown("---")
 st.markdown("""
-<div style='text-align: center; color: #666; padding: 2rem;'>
-    <p>💡 <strong>Professional Timesheet Dashboard</strong> | Built with Streamlit</p>
-    <p>Use the sidebar filters to slice and dice your data. Switch between tabs to explore different aspects of your timesheet data.</p>
+<div style='text-align: center; color: #6b7280; padding: 2rem; background-color: #f8fafc; border-radius: 8px; margin-top: 2rem;'>
+    <div style='font-size: 1.5rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;'>ACMI</div>
+    <p style="margin: 0; font-weight: 500;">Timesheet Analytics Platform</p>
+    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Advanced workforce intelligence • Real-time compliance monitoring • Strategic insights</p>
 </div>
 """, unsafe_allow_html=True)
