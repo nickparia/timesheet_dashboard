@@ -120,7 +120,7 @@ st.markdown("""
         background-color: var(--background-color);
     }
     
-    /* Tab styling */
+    /* Tab styling - More aggressive approach */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: var(--background-color);
@@ -129,24 +129,41 @@ st.markdown("""
     }
     
     .stTabs [data-baseweb="tab"] {
-        background-color: var(--card-background);
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        color: var(--text-primary) !important;
+        background-color: var(--card-background) !important;
+        border-radius: 8px !important;
+        border: 1px solid var(--border-color) !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+        color: #1f2937 !important;
+        min-height: 45px !important;
+    }
+    
+    .stTabs [data-baseweb="tab"] > div {
+        color: #1f2937 !important;
+    }
+    
+    .stTabs [data-baseweb="tab"] span {
+        color: #1f2937 !important;
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        background-color: #f1f5f9;
-        border-color: var(--secondary-color);
+        background-color: #f1f5f9 !important;
+        border-color: var(--secondary-color) !important;
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, var(--secondary-color) 0%, #2563eb 100%);
+        background: linear-gradient(135deg, var(--secondary-color) 0%, #2563eb 100%) !important;
         color: white !important;
-        border-color: var(--secondary-color);
+        border-color: var(--secondary-color) !important;
+    }
+    
+    .stTabs [aria-selected="true"] > div {
+        color: white !important;
+    }
+    
+    .stTabs [aria-selected="true"] span {
+        color: white !important;
     }
     
     /* Header section */
