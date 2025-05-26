@@ -135,11 +135,17 @@ st.markdown("""
         padding: 0.75rem 1.5rem;
         font-weight: 600;
         transition: all 0.2s ease;
+        color: var(--text-primary) !important;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: #f1f5f9;
+        border-color: var(--secondary-color);
     }
     
     .stTabs [aria-selected="true"] {
         background: linear-gradient(135deg, var(--secondary-color) 0%, #2563eb 100%);
-        color: white;
+        color: white !important;
         border-color: var(--secondary-color);
     }
     
