@@ -511,6 +511,19 @@ with tab1:
         if st.session_state.drill_down_type == "category":
             drill_data = drill_data[drill_data['Categorie'] == st.session_state.drill_down_value]
             
+            # Summary metrics for the category
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Hours", f"{drill_data['Aantal'].sum():.0f}")
+            with col2:
+                st.metric("Total Revenue", f"€{drill_data['Totaal'].sum():,.0f}")
+            with col3:
+                st.metric("Employees", drill_data['Medewerker'].nunique())
+            with col4:
+                st.metric("Projects", drill_data['Project'].nunique())
+            
+            st.markdown("---")
+            
             col1, col2 = st.columns(2)
             
             with col1:
@@ -564,6 +577,19 @@ with tab1:
             month_name = st.session_state.drill_down_value
             drill_data = drill_data[drill_data['Month_Name'] == month_name]
             
+            # Summary metrics for the month
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Hours", f"{drill_data['Aantal'].sum():.0f}")
+            with col2:
+                st.metric("Total Revenue", f"€{drill_data['Totaal'].sum():,.0f}")
+            with col3:
+                st.metric("Active Employees", drill_data['Medewerker'].nunique())
+            with col4:
+                st.metric("Active Projects", drill_data['Project'].nunique())
+            
+            st.markdown("---")
+            
             col1, col2 = st.columns(2)
             
             with col1:
@@ -598,34 +624,51 @@ with tab1:
                 st.plotly_chart(fig_proj_month, use_container_width=True)
     
     else:
-        # MAIN OVERVIEW WITH INTERACTIVE CHARTS
+        # MAIN OVERVIEW WITH INTERACTIVE DRILL-DOWN OPTIONS
+        st.markdown("#### 🔍 Interactive Analysis - Select items below to drill down into detailed views")
+        
+        # Interactive selection panels
         col1, col2 = st.columns(2)
         
         with col1:
-            # Interactive hours by category
+            st.markdown("##### 📊 Analyze by Category")
+            
+            # Hours by category chart
             category_hours = filtered_df.groupby('Categorie')['Aantal'].sum().reset_index()
+            category_hours = category_hours.sort_values('Aantal', ascending=False)
+            
             fig1 = px.pie(category_hours, values='Aantal', names='Categorie', 
-                         title="Hours Distribution by Category (Click to drill down)")
+                         title="Hours Distribution by Category")
             fig1.update_traces(
                 hovertemplate='<b>%{label}</b><br>Hours: %{value}<br>Percentage: %{percent}<extra></extra>',
                 textinfo='label+percent'
             )
+            st.plotly_chart(fig1, use_container_width=True)
             
-            # Display the chart and capture click events
-            selected_category = st.plotly_chart(fig1, use_container_width=True, key="category_chart")
+            # Category selection for drill-down
+            selected_cat = st.selectbox(
+                "Select category to analyze in detail:",
+                options=category_hours['Categorie'].tolist(),
+                key="cat_select"
+            )
             
-            # Check for category selection
-            category_options = ["Click on chart to drill down"] + category_hours['Categorie'].tolist()
-            selected_cat = st.selectbox("Or select category to analyze:", category_options, key="cat_select")
-            
-            if selected_cat != "Click on chart to drill down":
-                if st.button(f"Analyze {selected_cat} →", key="drill_cat"):
+            col_btn1, col_btn2 = st.columns(2)
+            with col_btn1:
+                if st.button(f"🔍 Analyze {selected_cat}", key="drill_cat", use_container_width=True):
                     st.session_state.drill_down_active = True
                     st.session_state.drill_down_type = "category"
                     st.session_state.drill_down_value = selected_cat
                     st.rerun()
             
-            # Interactive hours by month
+            with col_btn2:
+                # Quick stats for selected category
+                cat_data = filtered_df[filtered_df['Categorie'] == selected_cat]
+                st.metric("Hours", f"{cat_data['Aantal'].sum():.0f}")
+        
+        with col2:
+            st.markdown("##### 📅 Analyze by Month")
+            
+            # Hours by month chart
             monthly_hours = filtered_df.groupby('Month_Name')['Aantal'].sum().reset_index()
             month_order = ['January', 'February', 'March', 'April', 'May', 'June',
                           'July', 'August', 'September', 'October', 'November', 'December']
@@ -634,27 +677,42 @@ with tab1:
             monthly_hours = monthly_hours.sort_values('Month_Name')
             
             fig2 = px.bar(monthly_hours, x='Month_Name', y='Aantal', 
-                         title="Hours by Month (Click to drill down)",
+                         title="Hours by Month",
                          color_discrete_sequence=['#3b82f6'])
             fig2.update_traces(
                 hovertemplate='<b>%{x}</b><br>Hours: %{y}<extra></extra>'
             )
-            
-            st.plotly_chart(fig2, use_container_width=True, key="month_chart")
+            fig2.update_layout(xaxis_tickangle=45)
+            st.plotly_chart(fig2, use_container_width=True)
             
             # Month selection for drill-down
-            month_options = ["Click on chart to drill down"] + monthly_hours['Month_Name'].astype(str).tolist()
-            selected_month = st.selectbox("Or select month to analyze:", month_options, key="month_select")
+            available_months = monthly_hours['Month_Name'].astype(str).tolist()
+            selected_month = st.selectbox(
+                "Select month to analyze in detail:",
+                options=available_months,
+                key="month_select"
+            )
             
-            if selected_month != "Click on chart to drill down":
-                if st.button(f"Analyze {selected_month} →", key="drill_month"):
+            col_btn1, col_btn2 = st.columns(2)
+            with col_btn1:
+                if st.button(f"🔍 Analyze {selected_month}", key="drill_month", use_container_width=True):
                     st.session_state.drill_down_active = True
                     st.session_state.drill_down_type = "month"
                     st.session_state.drill_down_value = selected_month
                     st.rerun()
+            
+            with col_btn2:
+                # Quick stats for selected month
+                month_data = filtered_df[filtered_df['Month_Name'] == selected_month]
+                st.metric("Hours", f"{month_data['Aantal'].sum():.0f}")
         
-        with col2:
-            # Interactive revenue by category
+        st.markdown("---")
+        
+        # Additional overview charts
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Revenue by category
             category_revenue = filtered_df.groupby('Categorie')['Totaal'].sum().reset_index()
             fig3 = px.pie(category_revenue, values='Totaal', names='Categorie', 
                          title="Revenue Distribution by Category")
@@ -663,8 +721,9 @@ with tab1:
                 textinfo='label+percent'
             )
             st.plotly_chart(fig3, use_container_width=True)
-            
-            # Interactive daily hours trend
+        
+        with col2:
+            # Daily hours trend
             daily_hours = filtered_df.groupby('Datum')['Aantal'].sum().reset_index()
             fig4 = px.line(daily_hours, x='Datum', y='Aantal', 
                           title="Daily Hours Trend")
@@ -674,7 +733,7 @@ with tab1:
             )
             st.plotly_chart(fig4, use_container_width=True)
         
-        # Interactive summary cards
+        # Quick insights cards
         st.markdown("#### 🔍 Quick Insights")
         
         col1, col2, col3 = st.columns(3)
